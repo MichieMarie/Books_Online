@@ -1,3 +1,10 @@
+# Project2-specific: ignore file types
+data/
+*.csv
+*.jpg
+*.png
+*.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
