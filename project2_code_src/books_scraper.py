@@ -75,25 +75,26 @@ def get_img_url(soup):
     img_src = soup.select_one("div.item.active img")["src"]
     return site_url + img_src[6:]
 
-# Building product dictionaries
-poetry_books_data = []  # list for all poetry book dictionaries
+def main():
+    poetry_books_data = []  # list for all poetry book dictionaries
 
+    for url in get_product_page_urls():
+        soup = get_book_urls(url)
+        universal_product_code, price_including_tax, price_excluding_tax, quantity_available = get_tbl_data(soup)
 
-for url in get_product_page_urls():
-    soup = get_book_urls(url)
-    universal_product_code, price_including_tax, price_excluding_tax, quantity_available = get_tbl_data(soup)
-
-    book_dict = {'product_page_url': url, 'universal_product_code': universal_product_code,
+        book_dict = {'product_page_url': url, 'universal_product_code': universal_product_code,
                  'book_title': get_title(soup), 'price_including_tax': price_including_tax,
                  'price_excluding_tax': price_excluding_tax, 'quantity_available': quantity_available,
                  'product_description': get_description(soup), 'category': get_category(soup), 'review_rating': get_review_rating(
             soup),
                  'image_url': get_img_url(soup)}
 
-    poetry_books_data.append(book_dict)  # append active iteration of book_dict to list of poetry dictionaries
+        poetry_books_data.append(book_dict)  # append active iteration of book_dict to list of poetry dictionaries
+
+    save_to_csv(poetry_books_data)
 
 def save_to_csv(poetry_books_data):
-    with open('../CSV_files/poetry.csv', mode='w', newline="") as csvfile:
+    with open('../CSV_files/MS2poetry.csv', mode='w', newline="") as csvfile:
         fieldnames = ['product_page_url', 'universal_product_code', 'book_title', 'price_including_tax',
                       'price_excluding_tax', 'quantity_available', 'product_description', 'category', 'review_rating',
                       'image_url']
@@ -101,3 +102,7 @@ def save_to_csv(poetry_books_data):
 
         writer.writeheader()
         writer.writerows(poetry_books_data)
+
+
+if __name__ == "__main__":
+    main()
