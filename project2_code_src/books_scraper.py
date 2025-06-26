@@ -8,8 +8,7 @@ page = requests.get(product_page_url)
 soup = BeautifulSoup(page.content, "html.parser")
 
 # Creating a dictionary for the csv and adding the first pair
-alita_data = {}
-alita_data['product_page_url'] = product_page_url
+alita_data = {'product_page_url' : product_page_url}
 
 # Scraping the table at the bottom of the page for UPC, price w and w/o tax, and availability
 info_tbl = soup.find("table", class_="table")
@@ -72,14 +71,14 @@ image_url = site_url + img_src # builds full url link
 alita_data['image_url'] = image_url
 #print("Image url:", image_url)
 
-#print(alita_data)
+# print(alita_data)
 
 # build csv output
-with open('alita.csv', mode='w') as csvfile:
+with open('alita.csv', mode='w', newline="") as csvfile:
     fieldnames = alita_data.keys()
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
     writer.writeheader()
-    writer.writerow(alita_data)
+    writer.writerows([alita_data])
 
 
