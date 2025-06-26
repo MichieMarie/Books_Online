@@ -7,7 +7,7 @@ product_category_url = "https://books.toscrape.com/catalogue/category/books/poet
 
 
 # Build list of product page urls.
-def get_poetry_urls():
+def get_product_page_urls():
     """Returns a list of product page URLs from the poetry category page."""
     poetry_page = requests.get(product_category_url)
     poetry_soup = BeautifulSoup(poetry_page.content, "html.parser")
@@ -17,9 +17,9 @@ def get_poetry_urls():
 def get_book_urls(url):
     """Fetches HTML from book page and returns BS object."""
     page = requests.get(url)
-    soup = BeautifulSoup(page.content, "html.parser")
+    page_soup = BeautifulSoup(page.content, "html.parser")
 
-    return soup
+    return page_soup
 
 # Functions to scrape product pages
 def get_tbl_data(soup):
@@ -43,23 +43,26 @@ def get_title(soup):
     return book_title
 
 
-def description(soup):
+def get_description(soup):
     """Scrape book description from product page."""
-    prod_desc_parent = soup.find("article", class_="product_page")
-    prod_desc_next = prod_desc_parent.find_all("p")
-    product_description = prod_desc_next[3].text.strip()
-    return product_description
+
+    paragraphs = soup.select("article.product_page p")
+    if len(paragraphs) > 3:
+        return paragraphs[3].text.strip()
+    else:
+        return ""
 
 
-def category(soup):
-    """Scrape book category from product page."""
-    cat_parent = soup.find("ul", class_="breadcrumb")
-    cat_link = cat_parent.find_all("a")
-    category = cat_link[2].text.strip()
-    return category
+def get_category(soup):
+    """Scrape book category from product page, if available."""
+    category_links = soup.select("ul.breadcrumb a")
+    if len(category_links) > 2:
+        return category_links[2].text.strip()
+    else:
+        return ""
 
 
-def review(soup):
+def get_review_rating(soup):
     """Scrape review from product page."""
     rtg_parent = soup.find("p", class_="star-rating")
     rtg_tags = rtg_parent["class"]
@@ -67,37 +70,34 @@ def review(soup):
     return review_rating
 
 
-def img_url(soup):
+def get_img_url(soup):
     """Scrape image url from product page."""
-    img_parent = soup.find("div", class_="item active")
-    img_tag = img_parent.find("img")  # finds img tag
-    img_src = img_tag["src"]  # identifies partial url in tag
-    img_src = img_src[6:]  # removes '../../' from partial html url
-    image_url = site_url + img_src  # builds full url link
-    return image_url
+    img_src = soup.select_one("div.item.active img")["src"]
+    return site_url + img_src[6:]
 
 # Building product dictionaries
 poetry_books_data = []  # list for all poetry book dictionaries
 
-product_page_urls = get_poetry_urls()
-for url in product_page_urls:
+
+for url in get_product_page_urls():
     soup = get_book_urls(url)
     universal_product_code, price_including_tax, price_excluding_tax, quantity_available = get_tbl_data(soup)
 
     book_dict = {'product_page_url': url, 'universal_product_code': universal_product_code,
                  'book_title': get_title(soup), 'price_including_tax': price_including_tax,
                  'price_excluding_tax': price_excluding_tax, 'quantity_available': quantity_available,
-                 'product_description': description(soup), 'category': category(soup), 'review_rating': review(soup),
-                 'image_url': img_url(soup)}
+                 'product_description': get_description(soup), 'category': get_category(soup), 'review_rating': get_review_rating(
+            soup),
+                 'image_url': get_img_url(soup)}
 
     poetry_books_data.append(book_dict)  # append active iteration of book_dict to list of poetry dictionaries
 
-# build csv output and save to file
-with open('../CSV_files/poetry.csv', mode='w', newline="") as csvfile:
-    fieldnames = ['product_page_url', 'universal_product_code', 'book_title', 'price_including_tax',
-                  'price_excluding_tax', 'quantity_available', 'product_description', 'category', 'review_rating',
-                  'image_url']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+def save_to_csv(poetry_books_data):
+    with open('../CSV_files/poetry.csv', mode='w', newline="") as csvfile:
+        fieldnames = ['product_page_url', 'universal_product_code', 'book_title', 'price_including_tax',
+                      'price_excluding_tax', 'quantity_available', 'product_description', 'category', 'review_rating',
+                      'image_url']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-    writer.writeheader()
-    writer.writerows(poetry_books_data)
+        writer.writeheader()
+        writer.writerows(poetry_books_data)
