@@ -1,8 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+from pathlib import Path
 
 SITE_URL = 'http://books.toscrape.com/'
+IMAGES_DIR = Path('../images')
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+CSV_DIR = Path('../csv')
+CSV_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_categories():
     """Returns names and URLs of all categories from the homepage."""
@@ -95,7 +100,8 @@ def get_review_rating(soup):
 def get_img_url(soup):
     '''Scrape image url from product page.'''
     img_src = soup.select_one('div.item.active img')['src']
-    return SITE_URL + img_src[6:]
+    img_url = SITE_URL + img_src[6:]
+    return img_url
 
 def get_categorized_books(category_url, category_name):
     product_page_urls = get_product_page_urls(category_url)
@@ -104,9 +110,15 @@ def get_categorized_books(category_url, category_name):
     for url in product_page_urls:
         soup = get_book_html(url)
         universal_product_code, price_including_tax, price_excluding_tax, quantity_available = get_tbl_data(soup)
+        title = get_title(soup)
+        img_url = get_img_url(soup)
+
+        #download images
+        image_filename = IMAGES_DIR / f"{universal_product_code}.jpg"
+        download_image(img_url, image_filename)
 
         book_dict = {'product_page_url': url, 'universal_product_code': universal_product_code,
-                         'book_title': get_title(soup), 'price_including_tax': price_including_tax,
+                         'book_title': title, 'price_including_tax': price_including_tax,
                          'price_excluding_tax': price_excluding_tax, 'quantity_available': quantity_available,
                          'product_description': get_description(soup), 'category': category_name,
                          'review_rating': get_review_rating(
@@ -118,10 +130,19 @@ def get_categorized_books(category_url, category_name):
     return category_books_data
 
 
-def main():
-    for category_url, category_name in get_categories():
-        category_books_data = get_categorized_books(category_url, category_name)
-        save_to_csv(category_books_data, category_name)
+def save_image_key_csv(image_key_data):
+    csv_filename = '../images/image_key.csv'
+    with open(csv_filename, mode='w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['book_title', 'universal_product_code'])
+        writer.writerows(image_key_data)
+
+
+def download_image(img_url, filename):
+    response = requests.get(img_url)
+    response.raise_for_status()
+    with open(filename, 'wb') as f:
+        f.write(response.content)
 
 def save_to_csv(category_books_data, category_name):
     csv_filename = f'../CSV_files/{category_name}.csv'
@@ -133,6 +154,22 @@ def save_to_csv(category_books_data, category_name):
 
         writer.writeheader()
         writer.writerows(category_books_data)
+
+
+def main():
+    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    image_key_data = []
+
+    for category_url, category_name in get_categories():
+        category_books_data = get_categorized_books(category_url, category_name)
+
+        # Build image key rows
+        image_key_data.extend([(book['book_title'], book['universal_product_code']) for book in category_books_data])
+
+        save_to_csv(category_books_data, category_name)
+
+    save_image_key_csv(image_key_data)
+
 
 
 if __name__ == '__main__':
