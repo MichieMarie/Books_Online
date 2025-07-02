@@ -131,7 +131,7 @@ def get_categorized_books(category_url, category_name):
 
 
 def save_image_key_csv(image_key_data):
-    csv_filename = '../images/image_key.csv'
+    csv_filename = IMAGES_DIR / "image_key.csv"
     with open(csv_filename, mode='w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['book_title', 'universal_product_code'])
@@ -145,7 +145,7 @@ def download_image(img_url, filename):
         f.write(response.content)
 
 def save_to_csv(category_books_data, category_name):
-    csv_filename = f'../CSV_files/{category_name}.csv'
+    csv_filename = CSV_DIR / f"{category_name}.csv"
     with open(csv_filename, mode='w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['product_page_url', 'universal_product_code', 'book_title', 'price_including_tax',
                       'price_excluding_tax', 'quantity_available', 'product_description', 'category', 'review_rating',
