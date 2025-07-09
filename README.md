@@ -11,7 +11,7 @@ On-demand data extraction program for use with [Books to Scrape](https://books.t
 ## Installation
 Use Microsoft CMD or Apple Terminal for any command prompts shown below.
 1. Clone this repository to your local machine:
-```git clone https://github.com/MichieMarie/Books_Online.git``` 
+```git clone https://github.com/MichieMarie/Books_Online``` 
 2. Install required Python packages:
 ```pip install -r requirements.txt```
 

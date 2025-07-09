@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import csv
 from pathlib import Path
 from datetime import datetime
+from typing import List, Tuple
 
 date_string = datetime.now().strftime('%Y.%m.%d')
 
@@ -12,8 +13,13 @@ IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 CSV_DIR = Path(f'{date_string}_csv')
 CSV_DIR.mkdir(parents=True, exist_ok=True)
 
-def get_categories():
-    """Returns names and URLs of all categories from the homepage."""
+def get_categories() -> List[Tuple[str, str]]:
+    """
+    Scrapes books.toscrape.com home page to retrieve all category names and their URLs.
+
+    Returns:
+        List[Tuple[str, str]]: A list of (category name, category URL) tuples.
+    """
     site_page = requests.get(SITE_URL)
     site_soup = BeautifulSoup(site_page.content, "html.parser")
     categories = []
@@ -26,9 +32,17 @@ def get_categories():
     return categories
 
 
+def get_product_page_urls(category_url: str) -> List[str]:
+    '''
+    Retrieves all product page URLs from a category URL, including paginated subpages.
 
-def get_product_page_urls(category_url: str):
-    '''Returns a list of product page URLs from each category including additional pages.'''
+    Args:
+        category_url (str): URL of the category page to start scraping from.
+
+    Returns:
+        List[str]: A list of full URLs to each product page.
+    '''
+
     product_page_urls = []
 
     while category_url:
@@ -51,18 +65,38 @@ def get_product_page_urls(category_url: str):
     return product_page_urls
 
 
+def get_book_html(url:str) -> BeautifulSoup:
+    '''
+    Fetches HTML from product page and returns a BeautifulSoup object.
 
-def get_book_html(url):
-    '''Fetches HTML from book page and returns BS object.'''
+    Args:
+        url (str): URL of the product page.
+
+    Returns:
+        BeautifulSoup: A BeautifulSoup object containing the product page content.
+    '''
+
     page = requests.get(url)
     page_soup = BeautifulSoup(page.content, 'html.parser')
 
     return page_soup
 
-# Functions to scrape product pages
-def get_tbl_data(soup):
-    '''Product page table data for upc, price w & w/o taxes, and availability.
-    Clean availability str to just numbers.'''
+
+def get_tbl_data(soup: BeautifulSoup) -> List[Tuple[str, str, str, str]]:
+    '''
+    Extracts upc, price w & w/o taxes, and availability from the product page table.
+
+    Args:
+        soup (BeautifulSoup): Parsed HTML of the product page.
+
+    Returns:
+        Tuple[str, str, str, str]: A tuple containing:
+            - UPC
+            - Price including tax
+            - Price excluding tax
+            - Quantity available
+    '''
+
     table_data = soup.select('table.table tr td')
     universal_product_code = table_data[0].text.strip()
     price_including_tax = table_data[3].text.strip()
@@ -74,15 +108,33 @@ def get_tbl_data(soup):
     return universal_product_code, price_including_tax, price_excluding_tax, quantity_available
 
 
-def get_title(soup):
-    '''Scrape book title from product page.'''
+def get_title(soup: BeautifulSoup) -> str:
+    '''
+    Retrieves product page title.
+
+    Args:
+        soup (BeautifulSoup): Parsed HTML of the product page.
+
+    Returns:
+        str: Product page title.
+    '''
+
     title_parent = soup.find('h1')
     book_title = title_parent.text.strip()
+
     return book_title
 
 
-def get_description(soup):
-    '''Scrape book description from product page.'''
+def get_description(soup: BeautifulSoup) -> str:
+    '''
+    Retrieves product description from product page.
+
+    Args:
+        soup (BeautifulSoup): Parsed HTML of the product page.
+
+    Returns:
+        str: Product description, or an empty string if no description was found.
+    '''
 
     paragraphs = soup.select('article.product_page p')
     if len(paragraphs) > 3:
@@ -91,22 +143,53 @@ def get_description(soup):
         return ''
 
 
+def get_review_rating(soup: BeautifulSoup) -> str:
+    '''
+    Retrieves product review rating from product page.
 
-def get_review_rating(soup):
-    '''Scrape review from product page.'''
+    Args:
+        soup (BeautifulSoup): Parsed HTML of the product page.
+
+    Returns:
+        str: Product review rating as a word (e.g., "One", "Two",...).
+    '''
+
     rtg_parent = soup.find('p', class_='star-rating')
     rtg_tags = rtg_parent['class']
     review_rating = rtg_tags[1]
+
     return review_rating
 
 
-def get_img_url(soup):
-    '''Scrape image url from product page.'''
+def get_img_url(soup: BeautifulSoup) -> str:
+    '''
+    Retrieves product image domain extension from product page and concatenates it with site URL.
+
+    Args:
+        soup (BeautifulSoup): Parsed HTML of the product page.
+
+    Returns:
+        str: Product image domain extension.
+    '''
+
     img_src = soup.select_one('div.item.active img')['src']
     img_url = SITE_URL + img_src[6:]
+
     return img_url
 
-def get_categorized_books(category_url, category_name):
+
+def get_categorized_books(category_url: str, category_name: str) -> List[dict]:
+    '''
+    Scrapes all product pages for a given category and returns a list of dictionaries containing product details. Also downloads each product image.
+
+    Args:
+        category_url (str): URL of the category page to start scraping from.
+        category_name (str): Name of the product category to start scraping from.
+
+    Returns:
+        List[dict]: A list of dictionaries containing product details for the category.
+    '''
+
     product_page_urls = get_product_page_urls(category_url)
     category_books_data = []
 
@@ -120,36 +203,74 @@ def get_categorized_books(category_url, category_name):
         image_filename = IMAGES_DIR / f"{universal_product_code}.jpg"
         download_image(img_url, image_filename)
 
-        book_dict = {'product_page_url': url, 'universal_product_code': universal_product_code,
-                         'book_title': title, 'price_including_tax': price_including_tax,
-                         'price_excluding_tax': price_excluding_tax, 'quantity_available': quantity_available,
-                         'product_description': get_description(soup), 'category': category_name,
-                         'review_rating': get_review_rating(
-                             soup),
-                         'image_url': get_img_url(soup)}
+        book_dict = {
+            'product_page_url': url,
+            'universal_product_code': universal_product_code,
+            'book_title': title,
+            'price_including_tax': price_including_tax,
+            'price_excluding_tax': price_excluding_tax,
+            'quantity_available': quantity_available,
+            'product_description': get_description(soup),
+            'category': category_name,
+            'review_rating': get_review_rating(soup),
+            'image_url': img_url
+        }
 
         category_books_data.append(book_dict)  # append active iteration of book_dict to list of category dictionaries
 
     return category_books_data
 
 
+def save_image_key_csv(image_key_data: List[Tuple[str, str]]) -> str:
+    '''
+    Saves image_key.csv, linking product titles to UPCs.
 
+    Args:
+        image_key_data (List[Tuple[str, str]]): A list of (product title, UPC) pairs.
 
-def save_image_key_csv(image_key_data):
+    Returns:
+        str: The path to the saved CSV file as a string.
+    '''
+
     csv_filename = IMAGES_DIR / "image_key.csv"
     with open(csv_filename, mode='w', newline='', encoding='utf-8-sig') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['book_title', 'universal_product_code'])
         writer.writerows(image_key_data)
 
+    return csv_filename
 
-def download_image(img_url, filename):
+
+def download_image(img_url: str, filename: Path) -> None:
+    '''
+    Downloads an image from the specified product page and saves it to the specified file path.
+
+    Args:
+        img_url (str): URL of the product page.
+        filename (Path): Path to the file where the image will be saved.
+
+    Returns:
+        None
+    '''
+
     response = requests.get(img_url)
     response.raise_for_status()
     with open(filename, 'wb') as f:
         f.write(response.content)
 
-def save_to_csv(category_books_data, category_name):
+
+def save_to_csv(category_books_data: List[dict], category_name: str) -> None:
+    '''
+    Saves product data for a given category into a CSV file.
+
+    Args:
+        category_books_data (List[dict]): A list of dictionaries containing product data.
+        category_name (str): The name of the category used to name the CSV file.
+
+    Returns:
+        None
+    '''
+
     csv_filename = CSV_DIR / f"{category_name}.csv"
     with open(csv_filename, mode='w', newline='', encoding='utf-8-sig') as csvfile:
         fieldnames = ['product_page_url', 'universal_product_code', 'book_title', 'price_including_tax',
@@ -174,7 +295,6 @@ def main():
         save_to_csv(category_books_data, category_name)
 
     save_image_key_csv(image_key_data)
-
 
 
 if __name__ == '__main__':
