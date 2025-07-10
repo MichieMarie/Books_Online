@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import csv
 from pathlib import Path
 from datetime import datetime
-from typing import List, Tuple
+from typing import list, tuple
 
 date_string = datetime.now().strftime('%Y.%m.%d')
 
@@ -13,7 +13,7 @@ IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 CSV_DIR = Path(f'{date_string}_csv')
 CSV_DIR.mkdir(parents=True, exist_ok=True)
 
-def get_categories() -> List[Tuple[str, str]]:
+def get_categories() -> list[tuple[str, str]]:
     """
     Scrapes books.toscrape.com home page to retrieve all category names and their URLs.
 
