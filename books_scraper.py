@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import csv
 from pathlib import Path
 from datetime import datetime
-from typing import list, tuple
+
 
 date_string = datetime.now().strftime('%Y.%m.%d')
 
@@ -18,7 +18,7 @@ def get_categories() -> list[tuple[str, str]]:
     Scrapes books.toscrape.com home page to retrieve all category names and their URLs.
 
     Returns:
-        List[Tuple[str, str]]: A list of (category name, category URL) tuples.
+        list[tuple[str, str]]: A list of (category name, category URL) tuples.
     """
     site_page = requests.get(SITE_URL)
     site_soup = BeautifulSoup(site_page.content, "html.parser")
@@ -32,7 +32,7 @@ def get_categories() -> list[tuple[str, str]]:
     return categories
 
 
-def get_product_page_urls(category_url: str) -> List[str]:
+def get_product_page_urls(category_url: str) -> list[str]:
     '''
     Retrieves all product page URLs from a category URL, including paginated subpages.
 
@@ -40,7 +40,7 @@ def get_product_page_urls(category_url: str) -> List[str]:
         category_url (str): URL of the category page to start scraping from.
 
     Returns:
-        List[str]: A list of full URLs to each product page.
+        list[str]: A list of full URLs to each product page.
     '''
 
     product_page_urls = []
@@ -82,7 +82,7 @@ def get_book_html(url:str) -> BeautifulSoup:
     return page_soup
 
 
-def get_tbl_data(soup: BeautifulSoup) -> List[Tuple[str, str, str, str]]:
+def get_tbl_data(soup: BeautifulSoup) -> list[tuple[str, str, str, str]]:
     '''
     Extracts upc, price w & w/o taxes, and availability from the product page table.
 
@@ -90,7 +90,7 @@ def get_tbl_data(soup: BeautifulSoup) -> List[Tuple[str, str, str, str]]:
         soup (BeautifulSoup): Parsed HTML of the product page.
 
     Returns:
-        Tuple[str, str, str, str]: A tuple containing:
+        t[str, str, str, str]: A tuple containing:
             - UPC
             - Price including tax
             - Price excluding tax
@@ -178,7 +178,7 @@ def get_img_url(soup: BeautifulSoup) -> str:
     return img_url
 
 
-def get_categorized_books(category_url: str, category_name: str) -> List[dict]:
+def get_categorized_books(category_url: str, category_name: str) -> list[dict]:
     '''
     Scrapes all product pages for a given category and returns a list of dictionaries containing product details. Also downloads each product image.
 
@@ -187,7 +187,7 @@ def get_categorized_books(category_url: str, category_name: str) -> List[dict]:
         category_name (str): Name of the product category to start scraping from.
 
     Returns:
-        List[dict]: A list of dictionaries containing product details for the category.
+        list[dict]: A list of dictionaries containing product details for the category.
     '''
 
     product_page_urls = get_product_page_urls(category_url)
@@ -221,12 +221,12 @@ def get_categorized_books(category_url: str, category_name: str) -> List[dict]:
     return category_books_data
 
 
-def save_image_key_csv(image_key_data: List[Tuple[str, str]]) -> str:
+def save_image_key_csv(image_key_data: list[tuple[str, str]]) -> str:
     '''
     Saves image_key.csv, linking product titles to UPCs.
 
     Args:
-        image_key_data (List[Tuple[str, str]]): A list of (product title, UPC) pairs.
+        image_key_data (list[tuple[str, str]]): A list of (product title, UPC) pairs.
 
     Returns:
         str: The path to the saved CSV file as a string.
@@ -259,12 +259,12 @@ def download_image(img_url: str, filename: Path) -> None:
         f.write(response.content)
 
 
-def save_to_csv(category_books_data: List[dict], category_name: str) -> None:
+def save_to_csv(category_books_data: list[dict], category_name: str) -> None:
     '''
     Saves product data for a given category into a CSV file.
 
     Args:
-        category_books_data (List[dict]): A list of dictionaries containing product data.
+        category_books_data (list[dict]): A list of dictionaries containing product data.
         category_name (str): The name of the category used to name the CSV file.
 
     Returns:
