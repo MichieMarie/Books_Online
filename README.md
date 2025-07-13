@@ -12,14 +12,22 @@ On-demand data extraction program for use with [Books to Scrape](https://books.t
 Use Microsoft CMD or Apple Terminal for any command prompts shown below.
 1. Clone this repository to your local machine:
 ```git clone https://github.com/MichieMarie/Books_Online``` 
-2. Install required Python packages:
+2. Set up a virtual environment
+   - Navigate to the project folder: ```cd Books_Online```
+   - Create a virtual environment: ```python -m venv .venv```
+   - Activate the virtual environment: 
+     - Windows: ```.venv\Scripts\activate```
+     - MacOS/Linux: ```source .venv/bin/activate```
+3. Install required Python packages:
 ```pip install -r requirements.txt```
+4. If not ready to run the script and you still need CMD, deactivate the virtual environment: ```deactivate```
 
 ## How to Run
 1. Open a terminal or command prompt window.
 2. Navigate to the folder where you saved the project: ```cd [path]\Books_Online```
-3. Run the main script: ```python books_scraper.py```
-4. The program will create two folders (see Output) 
+3. Activate the virtual environment: ```.venv\Scripts\activate```
+4. Run the main script: ```python books_scraper.py```
+5. The program will create two folders (see Output) 
 
 ## Output
 - A folder with the naming structure yyyy.mm.dd_csv (e.g. ```2025.07.01_csv```) containing one CSV file per category. CSV files have the following fields for each product:
